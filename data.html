@@ -54,11 +54,28 @@ const SEASON_HEADER = "Season"; // Used as the 'Year' filter
 
 // --- Initialization ---
 
+let rawData = [];
+let mchkApprovedData = [];
+
+const MCHK_HEADER = "Approved for MCHK";
+const DIFFICULTY_HEADER = "Difficulty (1-5)";
+const PRIMARY_CATEGORY_HEADER = "Category";
+const SEASON_HEADER = "Season";
+
 async function loadData() {
     try {
         const response = await fetch('competitions.json');
         const jsonText = await response.text();
         rawData = JSON.parse(jsonText);
+        
+        // --- 🚨 NEW: Standardize Data Types Immediately ---
+        rawData.forEach(item => {
+            // Force conversion of the Difficulty header to a true integer
+            if (item.hasOwnProperty(DIFFICULTY_HEADER)) {
+                item[DIFFICULTY_HEADER] = parseInt(item[DIFFICULTY_HEADER], 10);
+            }
+        });
+        // -------------------------------------------------
         
         // 1. Apply Initial Filter: Only keep Approved for MCHK=TRUE
         mchkApprovedData = rawData.filter(item => item[MCHK_HEADER] === 'TRUE');
@@ -68,19 +85,18 @@ async function loadData() {
             return;
         }
 
-        // Get headers from the filtered data (since it's representative)
         const headers = Object.keys(mchkApprovedData[0]); 
         
-        // Populate filter drop-downs and display initial data
         createTableHeaders(headers);
         populateFilters(mchkApprovedData);
-        displayData(mchkApprovedData); // Display the initially filtered list
+        displayData(mchkApprovedData);
         
     } catch (error) {
         console.error("Error loading JSON:", error);
         document.getElementById('table-body').innerHTML = '<tr><td colspan="10">Error loading data. See console.</td></tr>';
     }
 }
+// -----------------------------------------------------
 
 // --- Dynamic Table Creation ---
 
@@ -194,36 +210,36 @@ function populateFilters(data) {
 
 
 function applyFilters() {
-    // Note: If you renamed the filter <select> ID in Step 1, update it here too.
     const primaryCategoryFilter = document.getElementById('category-filter').value; 
     const difficultyFilter = document.getElementById('difficulty-filter').value;
     const yearFilter = document.getElementById('year-filter').value;
 
-    let filteredData = mchkApprovedData; // Start with the MCHK approved list
+    let filteredData = mchkApprovedData;
 
-    // Filter 1: Primary Category (Math, Science, etc.)
+    // Filter 1: Primary Category
     if (primaryCategoryFilter) {
         filteredData = filteredData.filter(item => item[PRIMARY_CATEGORY_HEADER] === primaryCategoryFilter);
     }
-    
-    // Filter 2: Difficulty (unchanged)
+
+    // Filter 2: Difficulty - Clean and direct comparison
     if (difficultyFilter) {
-        // Convert the string filter value to an integer for a strict comparison against the number in the JSON data.
+        // Convert the string filter value to an integer
         const filterNumber = parseInt(difficultyFilter, 10); 
         
         filteredData = filteredData.filter(item => 
-            // Now we compare a Number (filterNumber) to a Number (item[DIFFICULTY_HEADER])
+            // Compare Number to Number (guaranteed by the loadData fix)
             item[DIFFICULTY_HEADER] === filterNumber 
         );
     }
     
-    // Filter 3: Season/Year (unchanged)
+    // Filter 3: Season/Year
     if (yearFilter) {
         filteredData = filteredData.filter(item => item[SEASON_HEADER] === yearFilter);
     }
 
     displayData(filteredData);
 }
+// -----------------------------------------------------
 
 // Start the process
 loadData();
