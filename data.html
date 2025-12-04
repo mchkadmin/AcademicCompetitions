@@ -208,8 +208,12 @@ function applyFilters() {
     
     // Filter 2: Difficulty (unchanged)
     if (difficultyFilter) {
+        // Convert the string filter value to an integer for a strict comparison against the number in the JSON data.
+        const filterNumber = parseInt(difficultyFilter, 10); 
+        
         filteredData = filteredData.filter(item => 
-            String(item[DIFFICULTY_HEADER]) === difficultyFilter
+            // Now we compare a Number (filterNumber) to a Number (item[DIFFICULTY_HEADER])
+            item[DIFFICULTY_HEADER] === filterNumber 
         );
     }
     
