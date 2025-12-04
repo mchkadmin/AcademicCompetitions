@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCHK Approved Competitions Dataset</title>
+    <style>
+        /* Basic styling for demonstration */
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #filter-controls { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        #competitions-table { width: 100%; border-collapse: collapse; }
+        #competitions-table th, #competitions-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>MCHK Approved Competitions</h1>
+
+    <div id="filter-controls">
+        <h3>Filter Competitions</h3>
+        
+        <label for="category-filter">Category:</label>
+        <select id="category-filter" onchange="applyFilters()">
+            <option value="">All Categories</option>
+            </select>
+        
+        <label for="difficulty-filter">Difficulty (1-5):</label>
+        <select id="difficulty-filter" onchange="applyFilters()">
+            <option value="">All Difficulties</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+        
+        <label for="year-filter">Season:</label>
+        <select id="year-filter" onchange="applyFilters()">
+            <option value="">All Seasons</option>
+            </select>
+    </div>
+
+    <table id="competitions-table">
+        <thead></thead>
+        <tbody id="table-body">
+            <tr><td colspan="10">Loading data...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        let rawData = []; // Stores ALL data loaded from JSON
+let mchkApprovedData = []; // Stores only MCHK approved data (the initial filter)
+
+const MCHK_HEADER = "Approved for MCHK";
+const DIFFICULTY_HEADER = "Difficulty (1-5)";
+const SEASON_HEADER = "Season"; // Used as the 'Year' filter
+
+// --- Initialization ---
+
+async function loadData() {
+    try {
+        const response = await fetch('competitions.json');
+        const jsonText = await response.text();
+        rawData = JSON.parse(jsonText);
+        
+        // 1. Apply Initial Filter: Only keep Approved for MCHK=TRUE
+        mchkApprovedData = rawData.filter(item => item[MCHK_HEADER] === 'TRUE');
+        
+        if (mchkApprovedData.length === 0) {
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="10">No MCHK Approved Competitions found.</td></tr>';
+            return;
+        }
+
+        // Get headers from the filtered data (since it's representative)
+        const headers = Object.keys(mchkApprovedData[0]); 
+        
+        // Populate filter drop-downs and display initial data
+        createTableHeaders(headers);
+        populateFilters(mchkApprovedData);
+        displayData(mchkApprovedData); // Display the initially filtered list
+        
+    } catch (error) {
+        console.error("Error loading JSON:", error);
+        document.getElementById('table-body').innerHTML = '<tr><td colspan="10">Error loading data. See console.</td></tr>';
+    }
+}
+
+// --- Dynamic Table Creation ---
+
+function createTableHeaders(headers) {
+    const thead = document.querySelector('#competitions-table thead');
+    thead.innerHTML = ''; // Clear existing
+    const row = thead.insertRow();
+    
+    headers.forEach(header => {
+        // Exclude the approval column from the display, since we've already filtered by it
+        if (header !== MCHK_HEADER) {
+            const th = document.createElement('th');
+            th.textContent = header;
+            row.appendChild(th);
+        }
+    });
+}
+
+function displayData(data) {
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = ''; 
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10">No results match your filters.</td></tr>';
+        return;
+    }
+    
+    const headers = Object.keys(data[0]);
+
+    data.forEach(item => {
+        const row = tbody.insertRow();
+        
+        headers.forEach(header => {
+            // Again, skip the MCHK approval column for display
+            if (header !== MCHK_HEADER) {
+                const cell = row.insertCell();
+                let value = item[header];
+                
+                // Special handling for boolean/checkbox columns
+                if (value === 'TRUE') {
+                    cell.innerHTML = '✅';
+                } else if (value === 'FALSE') {
+                    cell.innerHTML = '❌';
+                } else {
+                    cell.textContent = value;
+                }
+            }
+        });
+    });
+}
+
+// --- Filter Population ---
+
+function populateFilters(data) {
+    const categorySelect = document.getElementById('category-filter');
+    const yearSelect = document.getElementById('year-filter');
+    
+    const categories = new Set();
+    const seasons = new Set();
+
+    // Iterate through data to find unique values
+    data.forEach(item => {
+        // Assuming your categories are columns P1, P2, etc. (TRUE/FALSE)
+        // Find categories where the value is 'TRUE'
+        Object.keys(item).forEach(key => {
+            if (key.match(/^P\d/) && item[key] === 'TRUE') { // Matches P1, P2, etc.
+                categories.add(key);
+            }
+        });
+        
+        // Find unique seasons for the 'Year' filter
+        if (item[SEASON_HEADER]) {
+            seasons.add(item[SEASON_HEADER]);
+        }
+    });
+
+    // Populate Category Filter
+    Array.from(categories).sort().forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+    });
+    
+    // Populate Season/Year Filter
+    Array.from(seasons).sort().forEach(season => {
+        const option = document.createElement('option');
+        option.value = season;
+        option.textContent = season;
+        yearSelect.appendChild(option);
+    });
+}
+
+// --- Core Filtering Logic ---
+
+function applyFilters() {
+    const categoryFilter = document.getElementById('category-filter').value;
+    const difficultyFilter = document.getElementById('difficulty-filter').value;
+    const yearFilter = document.getElementById('year-filter').value;
+
+    let filteredData = mchkApprovedData; // Start with the MCHK approved list
+
+    // Filter 1: Category (P1, P2, etc.)
+    if (categoryFilter) {
+        // Keeps the item if the selected category column (e.g., 'P1') is set to 'TRUE'
+        filteredData = filteredData.filter(item => item[categoryFilter] === 'TRUE');
+    }
+
+    // Filter 2: Difficulty
+    if (difficultyFilter) {
+        // Keeps the item if the Difficulty value matches the selected value
+        filteredData = filteredData.filter(item => 
+            String(item[DIFFICULTY_HEADER]) === difficultyFilter
+        );
+    }
+    
+    // Filter 3: Season/Year
+    if (yearFilter) {
+        // Keeps the item if the Season value matches the selected value
+        filteredData = filteredData.filter(item => item[SEASON_HEADER] === yearFilter);
+    }
+
+    displayData(filteredData);
+}
+
+// Start the process
+loadData();
+    </script>
+</body>
+</html>
