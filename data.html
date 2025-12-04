@@ -64,12 +64,22 @@ async function loadData() {
         
         // --- 🚨 NEW: Standardize Data Types Immediately ---
         rawData.forEach(item => {
-        // This line ensures the item value is explicitly a number (e.g., 4)
-        if (item.hasOwnProperty(DIFFICULTY_HEADER) && item[DIFFICULTY_HEADER] !== "") {
-        item[DIFFICULTY_HEADER] = parseInt(item[DIFFICULTY_HEADER], 10);
+            // Check if the property exists and is not an empty string
+            if (item.hasOwnProperty(DIFFICULTY_HEADER) && item[DIFFICULTY_HEADER] !== "") {
+                // This converts the number to an integer
+                item[DIFFICULTY_HEADER] = parseInt(item[DIFFICULTY_HEADER], 10);
+            } else {
+                // Ensure null for empty/missing values for safe comparison
+                item[DIFFICULTY_HEADER] = null;
             }
         });
         // -------------------------------------------------
+        
+        // --- ✅ DEBUGGING: Logs are now placed OUTSIDE the forEach loop ---
+        // These logs will run only once after all data is processed.
+        console.log("Expected Difficulty Header:", DIFFICULTY_HEADER);
+        console.log("First five standardized items:", rawData.slice(0, 5));
+        // ------------------------------------------------------------------
         
         // 1. Apply Initial Filter: Only keep Approved for MCHK=TRUE
         mchkApprovedData = rawData.filter(item => item[MCHK_HEADER] === 'TRUE');
