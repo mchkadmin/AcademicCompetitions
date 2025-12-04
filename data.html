@@ -64,9 +64,9 @@ async function loadData() {
         
         // --- 🚨 NEW: Standardize Data Types Immediately ---
         rawData.forEach(item => {
-            // Force conversion of the Difficulty header to a true integer
-            if (item.hasOwnProperty(DIFFICULTY_HEADER)) {
-                item[DIFFICULTY_HEADER] = parseInt(item[DIFFICULTY_HEADER], 10);
+        // This line ensures the item value is explicitly a number (e.g., 4)
+        if (item.hasOwnProperty(DIFFICULTY_HEADER) && item[DIFFICULTY_HEADER] !== "") {
+        item[DIFFICULTY_HEADER] = parseInt(item[DIFFICULTY_HEADER], 10);
             }
         });
         // -------------------------------------------------
@@ -215,13 +215,13 @@ function applyFilters() {
 
     // Filter 2: Difficulty - Clean and direct comparison
     if (difficultyFilter) {
-        // Convert the string filter value to an integer
-        const filterNumber = parseInt(difficultyFilter, 10); 
-        
-        filteredData = filteredData.filter(item => 
-            // Compare Number to Number (guaranteed by the loadData fix)
-            item[DIFFICULTY_HEADER] === filterNumber 
-        );
+    // Converts the string "4" to the number 4
+    const filterNumber = parseInt(difficultyFilter, 10); 
+    
+    filteredData = filteredData.filter(item => 
+        // Compares Number (item.Difficulty) to Number (filterNumber)
+        item[DIFFICULTY_HEADER] === filterNumber 
+    );
     }
     
     // Filter 3: Season/Year
