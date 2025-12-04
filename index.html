@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Required</title>
+    </head>
+<body>
+    <div id="login-container">
+        <h1>Private Dataset Access</h1>
+        <p>Please enter the passphrase to view the academic competitions data.</p>
+        <input type="password" id="password-input" placeholder="Enter Passphrase">
+        <button onclick="checkPassword()">Submit</button>
+        <p id="message" style="color: red;"></p>
+    </div>
+
+    <script>
+        function checkPassword() {
+            const correctPassword = "MalvernCollege"; // <--- ⚠️ CHANGE THIS!
+            const userInput = document.getElementById('password-input').value;
+            const messageElement = document.getElementById('message');
+
+            if (userInput === correctPassword) {
+                // Redirect to the actual data page
+                window.location.href = 'data.html';
+            } else {
+                messageElement.textContent = 'Incorrect password. Please try again.';
+                document.getElementById('password-input').value = ''; // Clear input
+            }
+        }
+    </script>
+</body>
+</html>
